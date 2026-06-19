@@ -7,7 +7,8 @@ export const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [bootstrapUsername, setBootstrapUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,10 +23,16 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      await login({ username, password });
+      await login({ email, password });
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Invalid username or password');
+      let msg = err.message || 'Invalid email or password';
+      if (err.details && err.details.details) {
+        msg = Object.entries(err.details.details)
+          .map(([field, error]) => `${field}: ${error}`)
+          .join(', ');
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -39,18 +46,25 @@ export const LoginPage: React.FC = () => {
     try {
       // Calls bootstrap admin API endpoint
       const { api } = await import('../services/api');
+      const bootEmail = `${bootstrapUsername}@example.com`;
       await api.auth.bootstrapAdmin({
-        username,
-        email: `${username}@example.com`,
+        username: bootstrapUsername,
+        email: bootEmail,
         password,
         confirmPassword: password,
         bootstrapToken
       });
-      // Immediately log in after bootstrapping
-      await login({ username, password });
+      // Immediately log in after bootstrapping (using correct email key)
+      await login({ email: bootEmail, password });
       navigate('/');
     } catch (err: any) {
-      setError(err.message || 'Bootstrap failed. Make sure ADMIN_BOOTSTRAP_TOKEN is set and matching.');
+      let msg = err.message || 'Bootstrap failed';
+      if (err.details && err.details.details) {
+        msg = Object.entries(err.details.details)
+          .map(([field, error]) => `${field}: ${error}`)
+          .join(', ');
+      }
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -90,17 +104,31 @@ export const LoginPage: React.FC = () => {
         )}
 
         <form onSubmit={showBootstrap ? handleBootstrap : handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Username</label>
-            <input 
-              type="text" 
-              className="form-input" 
-              placeholder="e.g. admin"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-          </div>
+          {showBootstrap ? (
+            <div className="form-group">
+              <label className="form-label">Admin Username</label>
+              <input 
+                type="text" 
+                className="form-input" 
+                placeholder="e.g. admin"
+                value={bootstrapUsername}
+                onChange={(e) => setBootstrapUsername(e.target.value)}
+                required
+              />
+            </div>
+          ) : (
+            <div className="form-group">
+              <label className="form-label">Email Address</label>
+              <input 
+                type="email" 
+                className="form-input" 
+                placeholder="e.g. user@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+          )}
 
           <div className="form-group">
             <label className="form-label">Password</label>
