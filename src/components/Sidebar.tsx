@@ -7,10 +7,10 @@ import {
   AlertTriangle, 
   Users, 
   Trash2, 
-  LogOut, 
-  Cpu 
+  LogOut 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import logoUrl from '../assets/images/rivet_logo.webp';
 
 export const Sidebar: React.FC = () => {
   const { user, isAdmin, logout } = useAuth();
@@ -24,18 +24,9 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-logo">
-        <Cpu size={28} className="text-primary" style={{ stroke: 'url(#gradient-lucide)' }} />
-        <span>Rivet</span>
+      <div className="sidebar-logo" style={{ padding: '1rem', display: 'flex', justifyContent: 'center' }}>
+        <img src={logoUrl} alt="Rivet Logo" style={{ maxWidth: '100%', maxHeight: '40px', objectFit: 'contain' }} />
       </div>
-      
-      {/* SVG Gradient definition for lucide icon gradient strokes */}
-      <svg width="0" height="0" style={{ position: 'absolute' }}>
-        <linearGradient id="gradient-lucide" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#8b5cf6" />
-          <stop offset="100%" stopColor="#3b82f6" />
-        </linearGradient>
-      </svg>
 
       <ul className="sidebar-menu">
         <li>
