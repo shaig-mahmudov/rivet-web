@@ -142,6 +142,30 @@ function onRefreshed(token: string) {
   refreshSubscribers = [];
 }
 
+async function parseResponse<T>(response: Response): Promise<T> {
+  if (response.status === 204) {
+    return null as T;
+  }
+  
+  const text = await response.text();
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { message: text };
+  }
+  
+  if (!response.ok) {
+    const errorMsg = data.message || data.error || `HTTP error! status: ${response.status}`;
+    const err = new Error(errorMsg) as Error & { status?: number; details?: unknown };
+    err.status = response.status;
+    err.details = data;
+    throw err;
+  }
+  
+  return data as T;
+}
+
 async function request<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
   const token = storage.getAccessToken();
   const headers = new Headers(options.headers || {});
@@ -191,10 +215,13 @@ async function request<T = unknown>(url: string, options: RequestInit = {}): Pro
       }
       
       // Queue requests until refresh finishes
-      return new Promise<T>((resolve) => {
+      return new Promise<T>((resolve, reject) => {
         subscribeTokenRefresh((newToken) => {
           headers.set('Authorization', `Bearer ${newToken}`);
-          resolve(fetch(`${API_BASE}${url}`, { ...options, headers }).then(res => res.json() as Promise<T>));
+          fetch(`${API_BASE}${url}`, { ...options, headers })
+            .then(res => parseResponse<T>(res))
+            .then(resolve)
+            .catch(reject);
         });
       });
     } else if (url.includes('/auth/refresh')) {
@@ -203,28 +230,7 @@ async function request<T = unknown>(url: string, options: RequestInit = {}): Pro
     }
   }
   
-  if (response.status === 204) {
-    return null as T;
-  }
-  
-  const text = await response.text();
-  let data;
-  try {
-    data = text ? JSON.parse(text) : {};
-  } catch {
-    data = { message: text };
-  }
-  
-  if (!response.ok) {
-    const errorMsg = data.message || data.error || `HTTP error! status: ${response.status}`;
-    // If validation details exist, throw detailed error
-    const err = new Error(errorMsg) as Error & { status?: number; details?: unknown };
-    err.status = response.status;
-    err.details = data; // store validation errors
-    throw err;
-  }
-  
-  return data as T;
+  return parseResponse<T>(response);
 }
 
 export const api = {
