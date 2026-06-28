@@ -1,73 +1,43 @@
-# React + TypeScript + Vite
+# Rivet Web (Frontend)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend React application for Rivet, an engineering workflow and task management platform.
 
-Currently, two official plugins are available:
+## Repositories
+- **Frontend Repository**: [https://github.com/shaig-mahmudov/rivet-web](https://github.com/shaig-mahmudov/rivet-web)
+- **Backend Repository**: [https://github.com/shaig-mahmudov/rivet-api](https://github.com/shaig-mahmudov/rivet-api)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Live Deployment
+- **Vercel Deployment**: [https://rivet-eta.vercel.app](https://rivet-eta.vercel.app)
 
-## React Compiler
+## Tech Stack
+- React 18
+- Vite
+- TypeScript
+- Vanilla CSS (Custom dark theme with glassmorphism)
+- React Router DOM
+- Lucide React (Icons)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Setup & Local Development
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. Install dependencies:
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+2. Start the development server:
+```bash
+npm run dev
 ```
+
+The application expects the backend API to be running on `http://localhost:8080`. API requests are proxied via the Vite configuration to avoid CORS issues locally.
+
+## Production Build
+
+To build the application for production:
+```bash
+npm run build
+```
+
+The output will be placed in the `dist` directory, which can be deployed to Vercel, Netlify, or served via Nginx.
+
+When deploying to Vercel, ensure you set the `VITE_API_URL` environment variable to your production backend URL (e.g., `https://my-api.koyeb.app/api`).
