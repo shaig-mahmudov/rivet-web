@@ -21,7 +21,8 @@ export const UsersPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'USER' | 'ADMIN'>('USER');
 
-  const loadUsers = async () => {
+  const loadUsers = React.useCallback(async () => {
+    await Promise.resolve();
     setLoading(true);
     try {
       const active = await api.users.list();
@@ -33,11 +34,14 @@ export const UsersPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    const timer = setTimeout(() => {
+      loadUsers();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadUsers]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,8 +56,9 @@ export const UsersPage: React.FC = () => {
       setIsCreateOpen(false);
       resetForm();
       loadUsers();
-    } catch (err: any) {
-      setError(err.message || 'Failed to create user');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to create user';
+      setError(errorMsg);
     }
   };
 
@@ -79,8 +84,9 @@ export const UsersPage: React.FC = () => {
       setIsEditOpen(false);
       resetForm();
       loadUsers();
-    } catch (err: any) {
-      setError(err.message || 'Failed to update user');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to update user';
+      setError(errorMsg);
     }
   };
 
@@ -89,8 +95,9 @@ export const UsersPage: React.FC = () => {
       try {
         await api.users.delete(id);
         loadUsers();
-      } catch (err: any) {
-        alert(err.message || 'Failed to disable user');
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : 'Failed to disable user';
+        alert(errorMsg);
       }
     }
   };
@@ -99,8 +106,9 @@ export const UsersPage: React.FC = () => {
     try {
       await api.users.restore(id);
       loadUsers();
-    } catch (err: any) {
-      alert(err.message || 'Failed to restore user');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to restore user';
+      alert(errorMsg);
     }
   };
 
@@ -274,7 +282,7 @@ export const UsersPage: React.FC = () => {
           </div>
           <div className="form-group">
             <label className="form-label">Role Access *</label>
-            <select className="form-select" value={role} onChange={(e) => setRole(e.target.value as any)}>
+            <select className="form-select" value={role} onChange={(e) => setRole(e.target.value as 'USER' | 'ADMIN')}>
               <option value="USER">USER (Developer/QA)</option>
               <option value="ADMIN">ADMIN (Manager)</option>
             </select>
@@ -320,7 +328,7 @@ export const UsersPage: React.FC = () => {
           </div>
           <div className="form-group">
             <label className="form-label">Role Access *</label>
-            <select className="form-select" value={role} onChange={(e) => setRole(e.target.value as any)}>
+            <select className="form-select" value={role} onChange={(e) => setRole(e.target.value as 'USER' | 'ADMIN')}>
               <option value="USER">USER (Developer/QA)</option>
               <option value="ADMIN">ADMIN (Manager)</option>
             </select>

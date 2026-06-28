@@ -10,7 +10,8 @@ export const DeletedTasksPage: React.FC = () => {
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const loadDeletedTasks = async () => {
+  const loadDeletedTasks = React.useCallback(async () => {
+    await Promise.resolve();
     setLoading(true);
     try {
       const data = await api.tasks.getDeleted();
@@ -23,19 +24,23 @@ export const DeletedTasksPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadDeletedTasks();
-  }, []);
+    const timer = setTimeout(() => {
+      loadDeletedTasks();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadDeletedTasks]);
 
   const handleRestore = async (id: number, title: string) => {
     try {
       await api.tasks.restore(id);
       alert(`Restored task "${title}"`);
       loadDeletedTasks();
-    } catch (err: any) {
-      alert(err.message || 'Failed to restore task. Make sure parent project is not deleted.');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to restore task.';
+      alert(errorMsg || 'Failed to restore task. Make sure parent project is not deleted.');
     }
   };
 
@@ -49,8 +54,9 @@ export const DeletedTasksPage: React.FC = () => {
       try {
         await api.tasks.hardDelete(id);
         loadDeletedTasks();
-      } catch (err: any) {
-        alert(err.message || 'Failed to hard delete task.');
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : 'Failed to hard delete task.';
+        alert(errorMsg);
       }
     }
   };

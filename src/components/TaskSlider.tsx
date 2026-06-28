@@ -106,35 +106,9 @@ export const TaskSlider: React.FC<TaskSliderProps> = ({ taskId, isOpen, onClose,
     return false;
   };
 
-  const loadTaskData = async () => {
-    if (!taskId) return;
-    try {
-      const taskDetails = await api.tasks.getById(taskId);
-      setTask(taskDetails);
-      
-      // Initialize edit fields
-      setEditTitle(taskDetails.title);
-      setEditDesc(taskDetails.description || '');
-      setEditPriority(taskDetails.priority || 'MEDIUM');
-      setEditSeverity(taskDetails.severity || '');
-      setEditTechContext(taskDetails.technicalContext || '');
-      setEditExpectedOutcome(taskDetails.expectedOutcome || '');
-      setEditAssigneeId(taskDetails.assigneeId ? String(taskDetails.assigneeId) : '');
-      setEditDueDate(taskDetails.dueDate || '');
-
-      // Load users for assignee dropdown
-      const usersList = await api.users.list();
-      setUsers(usersList);
-
-      // Load nested data based on active tab or preload
-      await loadTabSpecificData(activeTab, taskDetails);
-    } catch (e) {
-      console.error('Error loading task details', e);
-    }
-  };
-
-  const loadTabSpecificData = async (tab: typeof activeTab, currentTask = task) => {
+  const loadTabSpecificData = React.useCallback(async (tab: typeof activeTab, currentTask = task) => {
     if (!taskId || !currentTask) return;
+    await Promise.resolve();
     try {
       if (tab === 'comments') {
         const commentsData = await api.tasks.listComments(taskId);
@@ -161,19 +135,53 @@ export const TaskSlider: React.FC<TaskSliderProps> = ({ taskId, isOpen, onClose,
     } catch (e) {
       console.error(`Error loading tab data for ${tab}`, e);
     }
-  };
+  }, [taskId, task]);
+
+  const loadTaskData = React.useCallback(async () => {
+    if (!taskId) return;
+    await Promise.resolve();
+    try {
+      const taskDetails = await api.tasks.getById(taskId);
+      setTask(taskDetails);
+      
+      // Initialize edit fields
+      setEditTitle(taskDetails.title);
+      setEditDesc(taskDetails.description || '');
+      setEditPriority(taskDetails.priority || 'MEDIUM');
+      setEditSeverity(taskDetails.severity || '');
+      setEditTechContext(taskDetails.technicalContext || '');
+      setEditExpectedOutcome(taskDetails.expectedOutcome || '');
+      setEditAssigneeId(taskDetails.assigneeId ? String(taskDetails.assigneeId) : '');
+      setEditDueDate(taskDetails.dueDate || '');
+
+      // Load users for assignee dropdown
+      const usersList = await api.users.list();
+      setUsers(usersList);
+
+      // Load nested data based on active tab or preload
+      await loadTabSpecificData(activeTab, taskDetails);
+    } catch (e) {
+      console.error('Error loading task details', e);
+    }
+  }, [taskId, activeTab, loadTabSpecificData]);
 
   useEffect(() => {
     if (isOpen && taskId) {
-      loadTaskData();
+      const timer = setTimeout(() => {
+        loadTaskData();
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [taskId, isOpen]);
+  }, [taskId, isOpen, loadTaskData]);
 
   useEffect(() => {
     if (task) {
-      loadTabSpecificData(activeTab);
+      const timer = setTimeout(() => {
+        loadTabSpecificData(activeTab);
+      }, 0);
+      return () => clearTimeout(timer);
     }
-  }, [activeTab]);
+  }, [activeTab, task, loadTabSpecificData]);
 
   // Handle direct field updates (like title, description)
   const handleFieldSave = async (e: React.FormEvent) => {
@@ -194,8 +202,9 @@ export const TaskSlider: React.FC<TaskSliderProps> = ({ taskId, isOpen, onClose,
       setTask(updated);
       setIsEditingFields(false);
       onTaskUpdated();
-    } catch (err: any) {
-      setSaveError(err.message || 'Failed to save task edits');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to save task edits';
+      setSaveError(errorMsg);
     }
   };
 
@@ -219,8 +228,9 @@ export const TaskSlider: React.FC<TaskSliderProps> = ({ taskId, isOpen, onClose,
       if (activeTab === 'timeline') {
         loadTabSpecificData('timeline', reloadedTask);
       }
-    } catch (err: any) {
-      setTransitionError(err.message || 'Workflow transition rejected. Check task blocking conditions.');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Workflow transition rejected';
+      setTransitionError(errorMsg || 'Workflow transition rejected. Check task blocking conditions.');
     }
   };
 
@@ -230,7 +240,7 @@ export const TaskSlider: React.FC<TaskSliderProps> = ({ taskId, isOpen, onClose,
     if (!taskId || !newCommentBody.trim()) return;
     try {
       await api.tasks.createComment(taskId, {
-        type: newCommentType,
+        type: newCommentBody.trim() ? newCommentType : 'GENERAL',
         body: newCommentBody
       });
       setNewCommentBody('');
@@ -274,8 +284,9 @@ export const TaskSlider: React.FC<TaskSliderProps> = ({ taskId, isOpen, onClose,
         await api.tasks.completeCriteria(taskId, criteriaId);
       }
       loadTabSpecificData('criteria');
-    } catch (err: any) {
-      alert(err.message || 'Could not update criteria state');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Could not update criteria state';
+      alert(errorMsg);
     }
   };
 
@@ -297,8 +308,9 @@ export const TaskSlider: React.FC<TaskSliderProps> = ({ taskId, isOpen, onClose,
     try {
       const res = await api.tasks.aiCriteriaDraft(taskId);
       setAiSuggestions(res.suggestions);
-    } catch (err: any) {
-      setAiError(err.message || 'AI Provider is currently disabled or unconfigured in .env configuration.');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'AI Provider is currently disabled';
+      setAiError(errorMsg || 'AI Provider is currently disabled or unconfigured in .env configuration.');
     } finally {
       setLoadingAi(false);
     }
@@ -310,8 +322,9 @@ export const TaskSlider: React.FC<TaskSliderProps> = ({ taskId, isOpen, onClose,
       await api.tasks.bulkCreateCriteria(taskId, suggestionsToSave);
       setAiSuggestions([]);
       loadTabSpecificData('criteria');
-    } catch (err: any) {
-      alert(err.message || 'Failed to save suggestions');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to save suggestions';
+      alert(errorMsg);
     }
   };
 
@@ -325,8 +338,9 @@ export const TaskSlider: React.FC<TaskSliderProps> = ({ taskId, isOpen, onClose,
       setSelectedDepTaskId('');
       loadTabSpecificData('dependencies');
       onTaskUpdated();
-    } catch (err: any) {
-      setDepError(err.message || 'Circular dependencies or cross-project dependencies are not allowed.');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Circular dependencies or cross-project dependencies are not allowed.';
+      setDepError(errorMsg);
     }
   };
 
@@ -336,8 +350,9 @@ export const TaskSlider: React.FC<TaskSliderProps> = ({ taskId, isOpen, onClose,
       await api.tasks.removeDependency(taskId, depTaskId);
       loadTabSpecificData('dependencies');
       onTaskUpdated();
-    } catch (err: any) {
-      alert(err.message || 'Failed to remove dependency');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to remove dependency';
+      alert(errorMsg);
     }
   };
 
@@ -795,7 +810,7 @@ export const TaskSlider: React.FC<TaskSliderProps> = ({ taskId, isOpen, onClose,
                   <select 
                     className="form-select" 
                     value={newCommentType} 
-                    onChange={(e) => setNewCommentType(e.target.value as any)}
+                    onChange={(e) => setNewCommentType(e.target.value as 'GENERAL' | 'REVIEW' | 'BLOCKER' | 'INTERNAL_NOTE')}
                   >
                     <option value="GENERAL">GENERAL</option>
                     <option value="REVIEW">REVIEW</option>

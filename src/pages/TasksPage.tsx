@@ -28,7 +28,8 @@ export const TasksPage: React.FC = () => {
   // Selected Task Slider
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 
-  const loadData = async () => {
+  const loadData = React.useCallback(async () => {
+    await Promise.resolve();
     setLoading(true);
     try {
       const usersList = await api.users.list();
@@ -39,11 +40,12 @@ export const TasksPage: React.FC = () => {
     } catch (e) {
       console.error(e);
     }
-  };
+  }, []);
 
-  const loadTasks = async () => {
+  const loadTasks = React.useCallback(async () => {
+    await Promise.resolve();
     try {
-      const params: any = {
+      const params: Record<string, unknown> = {
         search: search || undefined,
         status: filterStatus || undefined,
         priority: filterPriority || undefined,
@@ -59,15 +61,21 @@ export const TasksPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    loadTasks();
   }, [search, filterStatus, filterPriority, filterType, filterProjectId, filterAssigneeId]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadData]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadTasks();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadTasks]);
 
   const resetFilters = () => {
     setSearch('');
