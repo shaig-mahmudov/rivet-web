@@ -193,7 +193,7 @@ export const LoginPage: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               <span>
                 Don't have an account?{' '}
-                <Link to="/register" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 600 }}>
+                <Link to="/register" style={{ color: '#8b5cf6', textDecoration: 'none', fontWeight: 600 }}>
                   Register here
                 </Link>
               </span>
