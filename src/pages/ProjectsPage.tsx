@@ -34,7 +34,7 @@ export const ProjectsPage: React.FC = () => {
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
   const [error, setError] = useState('');
 
-  const loadProjects = async () => {
+  const loadProjects = React.useCallback(async () => {
     setLoading(true);
     try {
       const data = await api.projects.list({
@@ -50,11 +50,11 @@ export const ProjectsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, page, size]);
 
   useEffect(() => {
     loadProjects();
-  }, [page, search]);
+  }, [loadProjects]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,8 +65,9 @@ export const ProjectsPage: React.FC = () => {
       setName('');
       setDescription('');
       loadProjects();
-    } catch (err: any) {
-      setError(err.message || 'Failed to create project');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to create project';
+      setError(errorMsg);
     }
   };
 
@@ -90,8 +91,9 @@ export const ProjectsPage: React.FC = () => {
       setDescription('');
       setSelectedProjectId(null);
       loadProjects();
-    } catch (err: any) {
-      setError(err.message || 'Failed to update project');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Failed to update project';
+      setError(errorMsg);
     }
   };
 
@@ -102,8 +104,9 @@ export const ProjectsPage: React.FC = () => {
       try {
         await api.projects.delete(id);
         loadProjects();
-      } catch (err: any) {
-        alert(err.message || 'Failed to delete project');
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : 'Failed to delete project';
+        alert(errorMsg);
       }
     }
   };

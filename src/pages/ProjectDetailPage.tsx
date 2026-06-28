@@ -51,8 +51,9 @@ export const ProjectDetailPage: React.FC = () => {
   const [taskAssigneeId, setTaskAssigneeId] = useState('');
   const [taskDueDate, setTaskDueDate] = useState('');
 
-  const loadProjectDetails = async () => {
+  const loadProjectDetails = React.useCallback(async () => {
     if (!id) return;
+    await Promise.resolve();
     try {
       const proj = await api.projects.list({ page: 0, size: 100 });
       const currentProj = proj.content.find(p => p.id === Number(id));
@@ -68,13 +69,14 @@ export const ProjectDetailPage: React.FC = () => {
       console.error(e);
       navigate('/projects');
     }
-  };
+  }, [id, navigate]);
 
-  const loadTasks = async () => {
+  const loadTasks = React.useCallback(async () => {
     if (!id) return;
+    await Promise.resolve();
     setLoading(true);
     try {
-      const params: any = {
+      const params: Record<string, unknown> = {
         search: search || undefined,
         status: filterStatus || undefined,
         priority: filterPriority || undefined,
@@ -90,15 +92,21 @@ export const ProjectDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, search, filterStatus, filterPriority, filterType, page]);
 
   useEffect(() => {
-    loadProjectDetails();
-  }, [id]);
+    const timer = setTimeout(() => {
+      loadProjectDetails();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadProjectDetails]);
 
   useEffect(() => {
-    loadTasks();
-  }, [id, page, search, filterStatus, filterPriority, filterType]);
+    const timer = setTimeout(() => {
+      loadTasks();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadTasks]);
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,10 +140,11 @@ export const ProjectDetailPage: React.FC = () => {
       setTaskDueDate('');
 
       loadTasks();
-    } catch (err: any) {
-      let message = err.message || 'Failed to create task';
-      if (err.details && err.details.errors) {
-        message = Object.values(err.details.errors).join(', ');
+    } catch (err: unknown) {
+      const errorWithDetails = err as Error & { details?: { errors?: Record<string, string> } };
+      let message = errorWithDetails.message || 'Failed to create task';
+      if (errorWithDetails.details && errorWithDetails.details.errors) {
+        message = Object.values(errorWithDetails.details.errors).join(', ');
       }
       setError(message);
     }
@@ -460,7 +469,7 @@ export const ProjectDetailPage: React.FC = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="form-group">
               <label className="form-label">Task Type *</label>
-              <select className="form-select" value={taskType} onChange={(e) => setTaskType(e.target.value as any)}>
+              <select className="form-select" value={taskType} onChange={(e) => setTaskType(e.target.value as 'BUG' | 'FEATURE' | 'REFACTOR' | 'INCIDENT' | 'RELIABILITY' | 'DOCUMENTATION' | 'TEST' | 'CHORE')}>
                 <option value="FEATURE">FEATURE</option>
                 <option value="BUG">BUG</option>
                 <option value="REFACTOR">REFACTOR</option>
@@ -474,7 +483,7 @@ export const ProjectDetailPage: React.FC = () => {
 
             <div className="form-group">
               <label className="form-label">Priority</label>
-              <select className="form-select" value={taskPriority} onChange={(e) => setTaskPriority(e.target.value as any)}>
+              <select className="form-select" value={taskPriority} onChange={(e) => setTaskPriority(e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT')}>
                 <option value="LOW">LOW</option>
                 <option value="MEDIUM">MEDIUM</option>
                 <option value="HIGH">HIGH</option>
