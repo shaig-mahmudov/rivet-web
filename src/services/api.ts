@@ -350,7 +350,10 @@ export const api = {
     getDeleted: (page = 0, size = 10): Promise<PageWrapper<TaskResponse>> => {
       return request(`/tasks/deleted?page=${page}&size=${size}`);
     },
-    getBlocked: (): Promise<TaskResponse[]> => request('/tasks/blocked'),
+    getBlocked: async (): Promise<TaskResponse[]> => {
+      const page = await request<PageWrapper<TaskResponse>>('/tasks?status=BLOCKED&size=100');
+      return page.content;
+    },
     getBlockedPage: (page = 0, size = 10): Promise<PageWrapper<TaskResponse>> => {
       return request(`/tasks/blocked/page?page=${page}&size=${size}`);
     },
