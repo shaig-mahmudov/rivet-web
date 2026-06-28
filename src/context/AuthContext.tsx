@@ -1,12 +1,13 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import React, { createContext, useContext, useState } from 'react';
 import { api, UserResponse, AuthResponse } from '../services/api';
 
 interface AuthContextType {
   user: UserResponse | null;
   loading: boolean;
   isAdmin: boolean;
-  login: (requestBody: any) => Promise<AuthResponse>;
-  register: (requestBody: any) => Promise<AuthResponse>;
+  login: (requestBody: Record<string, unknown>) => Promise<AuthResponse>;
+  register: (requestBody: Record<string, unknown>) => Promise<AuthResponse>;
   logout: () => Promise<void>;
   setUser: React.Dispatch<React.SetStateAction<UserResponse | null>>;
 }
@@ -14,26 +15,20 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Bootstrap auth session check on startup
+  const [user, setUser] = useState<UserResponse | null>(() => {
     const activeUser = api.storage.getUser();
     const token = api.storage.getAccessToken();
-    if (activeUser && token) {
-      setUser(activeUser);
-    }
-    setLoading(false);
-  }, []);
+    return activeUser && token ? activeUser : null;
+  });
+  const [loading] = useState(false);
 
-  const login = async (requestBody: any) => {
+  const login = async (requestBody: Record<string, unknown>) => {
     const res = await api.auth.login(requestBody);
     setUser(res.user);
     return res;
   };
 
-  const register = async (requestBody: any) => {
+  const register = async (requestBody: Record<string, unknown>) => {
     const res = await api.auth.register(requestBody);
     setUser(res.user);
     return res;

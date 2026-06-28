@@ -28,11 +28,12 @@ export const RegisterPage: React.FC = () => {
     try {
       await register({ username, email, password, confirmPassword });
       navigate('/');
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorWithDetails = err as Error & { details?: { errors?: Record<string, string> } };
       // Check detailed validation message
-      let message = err.message || 'Registration failed';
-      if (err.details && err.details.errors) {
-        message = Object.values(err.details.errors).join(', ');
+      let message = errorWithDetails.message || 'Registration failed';
+      if (errorWithDetails.details && errorWithDetails.details.errors) {
+        message = Object.values(errorWithDetails.details.errors).join(', ');
       }
       setError(message);
     } finally {

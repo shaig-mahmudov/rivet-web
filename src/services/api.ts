@@ -142,7 +142,7 @@ function onRefreshed(token: string) {
   refreshSubscribers = [];
 }
 
-async function request(url: string, options: RequestInit = {}): Promise<any> {
+async function request<T = unknown>(url: string, options: RequestInit = {}): Promise<T> {
   const token = storage.getAccessToken();
   const headers = new Headers(options.headers || {});
   
@@ -155,7 +155,7 @@ async function request(url: string, options: RequestInit = {}): Promise<any> {
   }
   
   const config = { ...options, headers };
-  let response = await fetch(`${API_BASE}${url}`, config);
+  const response = await fetch(`${API_BASE}${url}`, config);
   
   // Handing Token Expiry (401 Unauthorized)
   if (response.status === 401) {
@@ -190,10 +190,10 @@ async function request(url: string, options: RequestInit = {}): Promise<any> {
       }
       
       // Queue requests until refresh finishes
-      return new Promise((resolve) => {
+      return new Promise<T>((resolve) => {
         subscribeTokenRefresh((newToken) => {
           headers.set('Authorization', `Bearer ${newToken}`);
-          resolve(fetch(`${API_BASE}${url}`, { ...options, headers }).then(res => res.json()));
+          resolve(fetch(`${API_BASE}${url}`, { ...options, headers }).then(res => res.json() as Promise<T>));
         });
       });
     } else if (url.includes('/auth/refresh')) {
@@ -203,27 +203,27 @@ async function request(url: string, options: RequestInit = {}): Promise<any> {
   }
   
   if (response.status === 204) {
-    return null;
+    return null as T;
   }
   
   const text = await response.text();
   let data;
   try {
     data = text ? JSON.parse(text) : {};
-  } catch (e) {
+  } catch {
     data = { message: text };
   }
   
   if (!response.ok) {
     const errorMsg = data.message || data.error || `HTTP error! status: ${response.status}`;
     // If validation details exist, throw detailed error
-    const err = new Error(errorMsg) as any;
+    const err = new Error(errorMsg) as Error & { status?: number; details?: unknown };
     err.status = response.status;
     err.details = data; // store validation errors
     throw err;
   }
   
-  return data;
+  return data as T;
 }
 
 export const api = {
@@ -231,24 +231,24 @@ export const api = {
   
   // Auth API
   auth: {
-    login: async (requestBody: any): Promise<AuthResponse> => {
-      const data = await request('/auth/login', {
+    login: async (requestBody: Record<string, unknown>): Promise<AuthResponse> => {
+      const data = await request<AuthResponse>('/auth/login', {
         method: 'POST',
         body: JSON.stringify(requestBody)
       });
       storage.setSession(data);
       return data;
     },
-    register: async (requestBody: any): Promise<AuthResponse> => {
-      const data = await request('/auth/register', {
+    register: async (requestBody: Record<string, unknown>): Promise<AuthResponse> => {
+      const data = await request<AuthResponse>('/auth/register', {
         method: 'POST',
         body: JSON.stringify(requestBody)
       });
       storage.setSession(data);
       return data;
     },
-    bootstrapAdmin: async (requestBody: any): Promise<AuthResponse> => {
-      return request('/auth/bootstrap/admin', {
+    bootstrapAdmin: async (requestBody: Record<string, unknown>): Promise<AuthResponse> => {
+      return request<AuthResponse>('/auth/bootstrap/admin', {
         method: 'POST',
         body: JSON.stringify(requestBody)
       });
@@ -271,11 +271,11 @@ export const api = {
     list: (): Promise<UserResponse[]> => request('/users'),
     getDeleted: (): Promise<UserResponse[]> => request('/users/deleted'),
     getById: (id: number): Promise<UserResponse> => request(`/users/${id}`),
-    create: (user: any): Promise<UserResponse> => request('/users', {
+    create: (user: Record<string, unknown>): Promise<UserResponse> => request<UserResponse>('/users', {
       method: 'POST',
       body: JSON.stringify(user)
     }),
-    update: (id: number, user: any): Promise<UserResponse> => request(`/users/${id}`, {
+    update: (id: number, user: Record<string, unknown>): Promise<UserResponse> => request<UserResponse>(`/users/${id}`, {
       method: 'PUT',
       body: JSON.stringify(user)
     }),
@@ -315,27 +315,29 @@ export const api = {
     restore: (id: number): Promise<ProjectResponse> => request(`/projects/${id}/restore`, {
       method: 'POST'
     }),
-    listTasks: (id: number, params: any = {}): Promise<PageWrapper<TaskResponse>> => {
+    listTasks: (id: number, params: Record<string, unknown> = {}): Promise<PageWrapper<TaskResponse>> => {
       const q = new URLSearchParams();
       Object.keys(params).forEach(key => {
-        if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
-          q.append(key, String(params[key]));
+        const val = params[key];
+        if (val !== undefined && val !== null && val !== '') {
+          q.append(key, String(val));
         }
       });
-      return request(`/projects/${id}/tasks?${q.toString()}`);
+      return request<PageWrapper<TaskResponse>>(`/projects/${id}/tasks?${q.toString()}`);
     }
   },
 
   // Tasks API
   tasks: {
-    list: (params: any = {}): Promise<PageWrapper<TaskResponse>> => {
+    list: (params: Record<string, unknown> = {}): Promise<PageWrapper<TaskResponse>> => {
       const q = new URLSearchParams();
       Object.keys(params).forEach(key => {
-        if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
-          q.append(key, String(params[key]));
+        const val = params[key];
+        if (val !== undefined && val !== null && val !== '') {
+          q.append(key, String(val));
         }
       });
-      return request(`/tasks?${q.toString()}`);
+      return request<PageWrapper<TaskResponse>>(`/tasks?${q.toString()}`);
     },
     getDeleted: (page = 0, size = 10): Promise<PageWrapper<TaskResponse>> => {
       return request(`/tasks/deleted?page=${page}&size=${size}`);
@@ -345,15 +347,15 @@ export const api = {
       return request(`/tasks/blocked/page?page=${page}&size=${size}`);
     },
     getById: (id: number): Promise<TaskResponse> => request(`/tasks/${id}`),
-    create: (task: any): Promise<TaskResponse> => request('/tasks', {
+    create: (task: Record<string, unknown>): Promise<TaskResponse> => request<TaskResponse>('/tasks', {
       method: 'POST',
       body: JSON.stringify(task)
     }),
-    update: (id: number, task: any): Promise<TaskResponse> => request(`/tasks/${id}`, {
+    update: (id: number, task: Record<string, unknown>): Promise<TaskResponse> => request<TaskResponse>(`/tasks/${id}`, {
       method: 'PUT',
       body: JSON.stringify(task)
     }),
-    partialUpdate: (id: number, task: any): Promise<TaskResponse> => request(`/tasks/${id}`, {
+    partialUpdate: (id: number, task: Record<string, unknown>): Promise<TaskResponse> => request<TaskResponse>(`/tasks/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(task)
     }),
@@ -370,7 +372,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ status })
     }),
-    transition: (id: number, targetStatus: string, reason?: string): Promise<any> => request(`/tasks/${id}/transitions`, {
+    transition: (id: number, targetStatus: string, reason?: string): Promise<unknown> => request<unknown>(`/tasks/${id}/transitions`, {
       method: 'POST',
       body: JSON.stringify({ targetStatus, reason })
     }),

@@ -25,10 +25,11 @@ export const LoginPage: React.FC = () => {
     try {
       await login({ email, password });
       navigate('/');
-    } catch (err: any) {
-      let msg = err.message || 'Invalid email or password';
-      if (err.details && err.details.details) {
-        msg = Object.entries(err.details.details)
+    } catch (err: unknown) {
+      const errorWithDetails = err as Error & { details?: { details?: Record<string, string> } };
+      let msg = errorWithDetails.message || 'Invalid email or password';
+      if (errorWithDetails.details && errorWithDetails.details.details) {
+        msg = Object.entries(errorWithDetails.details.details)
           .map(([field, error]) => `${field}: ${error}`)
           .join(', ');
       }
@@ -57,10 +58,11 @@ export const LoginPage: React.FC = () => {
       // Immediately log in after bootstrapping (using correct email key)
       await login({ email: bootEmail, password });
       navigate('/');
-    } catch (err: any) {
-      let msg = err.message || 'Bootstrap failed';
-      if (err.details && err.details.details) {
-        msg = Object.entries(err.details.details)
+    } catch (err: unknown) {
+      const errorWithDetails = err as Error & { details?: { details?: Record<string, string> } };
+      let msg = errorWithDetails.message || 'Bootstrap failed';
+      if (errorWithDetails.details && errorWithDetails.details.details) {
+        msg = Object.entries(errorWithDetails.details.details)
           .map(([field, error]) => `${field}: ${error}`)
           .join(', ');
       }
