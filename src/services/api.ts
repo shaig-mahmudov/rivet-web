@@ -146,7 +146,8 @@ async function request<T = unknown>(url: string, options: RequestInit = {}): Pro
   const token = storage.getAccessToken();
   const headers = new Headers(options.headers || {});
   
-  if (token) {
+  const isPublicAuthEndpoint = url.startsWith('/auth/') && !url.includes('/auth/logout');
+  if (token && !isPublicAuthEndpoint) {
     headers.set('Authorization', `Bearer ${token}`);
   }
   
