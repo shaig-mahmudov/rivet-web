@@ -1,19 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
 :root {
+  color-scheme: dark;
   /* Font */
   --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  /* Colors */
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #111119;
-  --bg-tertiary: #191924;
-  --bg-glass: rgba(17, 17, 25, 0.75);
+  /* Colors - Matte Black Theme */
+  --bg-primary: #08080c;
+  --bg-secondary: #0f0f14;
+  --bg-tertiary: #17171e;
+  --bg-glass: rgba(15, 15, 20, 0.85);
   
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(139, 92, 246, 0.4);
+  --border-color: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(59, 130, 246, 0.4);
   
-  /* Accent Colors: Purple & Blue */
+  /* Accent Colors: Premium Purple & Blue Tones */
   --color-primary: #8b5cf6;
   --color-secondary: #3b82f6;
   --color-primary-rgb: 139, 92, 246;
@@ -22,10 +23,10 @@
   --gradient-main: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
   --gradient-hover: linear-gradient(135deg, #a78bfa 0%, #60a5fa 100%);
   
-  /* Details: Turquoise & Cyan */
-  --color-accent: #06b6d4;
-  --color-accent-teal: #14b8a6;
-  --color-accent-glow: rgba(6, 182, 212, 0.15);
+  /* Details: Sky Blue & Light Blue */
+  --color-accent: #0ea5e9;
+  --color-accent-teal: #38bdf8;
+  --color-accent-glow: rgba(59, 130, 246, 0.15);
   
   /* Typography Colors */
   --text-primary: #f3f4f6;
@@ -38,7 +39,7 @@
   --color-danger: #ef4444;
   
   /* Utilities */
-  --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+  --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
   --glass-blur: blur(16px);
   --border-radius-sm: 6px;
   --border-radius: 12px;
@@ -56,6 +57,10 @@
 body {
   font-family: var(--font-family);
   background-color: var(--bg-primary);
+  /* Added noise/grain texture to matte black background */
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.03) 0px, transparent 50%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
   color: var(--text-primary);
   overflow-x: hidden;
   line-height: 1.5;
@@ -108,8 +113,8 @@ button, input, select, textarea {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: radial-gradient(circle at top right, rgba(139, 92, 246, 0.05), transparent 600px),
-              radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.03), transparent 600px);
+  background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.04), transparent 600px),
+              radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.02), transparent 600px);
 }
 
 .header {
@@ -138,7 +143,8 @@ button, input, select, textarea {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: radial-gradient(circle at center, rgba(139, 92, 246, 0.1) 0%, var(--bg-primary) 70%);
+  background: radial-gradient(circle at center, rgba(59, 130, 246, 0.08) 0%, var(--bg-primary) 70%),
+              url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
   padding: 1.5rem;
 }
 
@@ -210,7 +216,12 @@ button, input, select, textarea {
 .form-input:focus, .form-select:focus, .form-textarea:focus {
   border-color: var(--color-primary);
   background-color: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+select option {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .form-textarea {
@@ -240,7 +251,7 @@ button, input, select, textarea {
 
 .btn-primary:hover {
   background: var(--gradient-hover);
-  box-shadow: 0 0 16px rgba(139, 92, 246, 0.4);
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.4);
 }
 
 .btn-primary:disabled {
@@ -323,7 +334,7 @@ button, input, select, textarea {
 
 .sidebar-item-link.active {
   color: white;
-  background: rgba(139, 92, 246, 0.15);
+  background: rgba(139, 92, 246, 0.12);
   border-left: 3px solid var(--color-primary);
 }
 
@@ -598,7 +609,7 @@ button, input, select, textarea {
 }
 
 .task-card:hover {
-  border-color: rgba(139, 92, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.3);
   transform: translateY(-2px);
 }
 
