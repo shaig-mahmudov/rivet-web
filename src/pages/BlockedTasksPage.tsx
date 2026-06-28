@@ -11,7 +11,6 @@ export const BlockedTasksPage: React.FC = () => {
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 
   const loadBlockedTasks = React.useCallback(async () => {
-    await Promise.resolve();
     setLoading(true);
     try {
       const data = await api.tasks.getBlocked();
@@ -27,10 +26,7 @@ export const BlockedTasksPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadBlockedTasks();
-    }, 0);
-    return () => clearTimeout(timer);
+    loadBlockedTasks();
   }, [loadBlockedTasks]);
 
   return (

@@ -11,7 +11,6 @@ export const DeletedTasksPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const loadDeletedTasks = React.useCallback(async () => {
-    await Promise.resolve();
     setLoading(true);
     try {
       const data = await api.tasks.getDeleted();
@@ -27,10 +26,7 @@ export const DeletedTasksPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadDeletedTasks();
-    }, 0);
-    return () => clearTimeout(timer);
+    loadDeletedTasks();
   }, [loadDeletedTasks]);
 
   const handleRestore = async (id: number, title: string) => {

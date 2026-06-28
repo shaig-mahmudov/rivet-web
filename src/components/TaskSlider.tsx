@@ -108,7 +108,6 @@ export const TaskSlider: React.FC<TaskSliderProps> = ({ taskId, isOpen, onClose,
 
   const loadTabSpecificData = React.useCallback(async (tab: typeof activeTab, currentTask = task) => {
     if (!taskId || !currentTask) return;
-    await Promise.resolve();
     try {
       if (tab === 'comments') {
         const commentsData = await api.tasks.listComments(taskId);
@@ -139,7 +138,6 @@ export const TaskSlider: React.FC<TaskSliderProps> = ({ taskId, isOpen, onClose,
 
   const loadTaskData = React.useCallback(async () => {
     if (!taskId) return;
-    await Promise.resolve();
     try {
       const taskDetails = await api.tasks.getById(taskId);
       setTask(taskDetails);
@@ -167,10 +165,7 @@ export const TaskSlider: React.FC<TaskSliderProps> = ({ taskId, isOpen, onClose,
 
   useEffect(() => {
     if (isOpen && taskId) {
-      const timer = setTimeout(() => {
-        loadTaskData();
-      }, 0);
-      return () => clearTimeout(timer);
+      loadTaskData();
     }
   }, [taskId, isOpen, loadTaskData]);
 

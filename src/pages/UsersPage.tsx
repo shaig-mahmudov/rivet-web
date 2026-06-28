@@ -22,7 +22,6 @@ export const UsersPage: React.FC = () => {
   const [role, setRole] = useState<'USER' | 'ADMIN'>('USER');
 
   const loadUsers = React.useCallback(async () => {
-    await Promise.resolve();
     setLoading(true);
     try {
       const active = await api.users.list();
@@ -37,10 +36,7 @@ export const UsersPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadUsers();
-    }, 0);
-    return () => clearTimeout(timer);
+    loadUsers();
   }, [loadUsers]);
 
   const handleCreate = async (e: React.FormEvent) => {

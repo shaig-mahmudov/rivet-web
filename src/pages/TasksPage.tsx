@@ -29,7 +29,6 @@ export const TasksPage: React.FC = () => {
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 
   const loadData = React.useCallback(async () => {
-    await Promise.resolve();
     setLoading(true);
     try {
       const usersList = await api.users.list();
@@ -43,7 +42,6 @@ export const TasksPage: React.FC = () => {
   }, []);
 
   const loadTasks = React.useCallback(async () => {
-    await Promise.resolve();
     try {
       const params: Record<string, unknown> = {
         search: search || undefined,
@@ -64,18 +62,43 @@ export const TasksPage: React.FC = () => {
   }, [search, filterStatus, filterPriority, filterType, filterProjectId, filterAssigneeId]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadData();
-    }, 0);
-    return () => clearTimeout(timer);
+    loadData();
   }, [loadData]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadTasks();
-    }, 0);
-    return () => clearTimeout(timer);
+    loadTasks();
   }, [loadTasks]);
+
+  const handleDragStart = (e: React.DragEvent, taskId: number) => {
+    e.dataTransfer.setData('text/plain', taskId.toString());
+  };
+
+  const handleDrop = async (e: React.DragEvent, newStatus: string) => {
+    e.preventDefault();
+    const taskIdStr = e.dataTransfer.getData('text/plain');
+    if (!taskIdStr) return;
+    const taskId = Number(taskIdStr);
+
+    const draggedTask = tasks.find(t => t.id === taskId);
+    if (!draggedTask) return;
+    if (draggedTask.status === newStatus) return;
+
+    // Optimistically update UI
+    setTasks(prevTasks =>
+      prevTasks.map(t => t.id === taskId ? { ...t, status: newStatus as any } : t)
+    );
+
+    try {
+      await api.tasks.transition(taskId, newStatus, 'Moved via Kanban board drag-and-drop');
+    } catch (err: unknown) {
+      // Revert optimistic update
+      setTasks(prevTasks =>
+        prevTasks.map(t => t.id === taskId ? { ...t, status: draggedTask.status } : t)
+      );
+      const errorMsg = err instanceof Error ? err.message : 'Workflow transition rejected';
+      alert(`Could not move task: ${errorMsg}`);
+    }
+  };
 
   const resetFilters = () => {
     setSearch('');
@@ -226,7 +249,12 @@ export const TasksPage: React.FC = () => {
                 {KANBAN_STATUSES.map(col => {
                   const colTasks = getStatusTasks(col.value);
                   return (
-                    <div key={col.value} className="kanban-column">
+                    <div 
+                      key={col.value} 
+                      className="kanban-column"
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => handleDrop(e, col.value)}
+                    >
                       <div className="kanban-header">
                         <div className="kanban-title">
                           <span style={{ 
@@ -250,6 +278,8 @@ export const TasksPage: React.FC = () => {
                             <div 
                               key={task.id} 
                               className="task-card"
+                              draggable={true}
+                              onDragStart={(e) => handleDragStart(e, task.id)}
                               onClick={() => setSelectedTaskId(task.id)}
                             >
                               <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>

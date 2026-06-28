@@ -53,7 +53,6 @@ export const ProjectDetailPage: React.FC = () => {
 
   const loadProjectDetails = React.useCallback(async () => {
     if (!id) return;
-    await Promise.resolve();
     try {
       const proj = await api.projects.list({ page: 0, size: 100 });
       const currentProj = proj.content.find(p => p.id === Number(id));
@@ -73,7 +72,6 @@ export const ProjectDetailPage: React.FC = () => {
 
   const loadTasks = React.useCallback(async () => {
     if (!id) return;
-    await Promise.resolve();
     setLoading(true);
     try {
       const params: Record<string, unknown> = {
@@ -95,17 +93,11 @@ export const ProjectDetailPage: React.FC = () => {
   }, [id, search, filterStatus, filterPriority, filterType, page]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadProjectDetails();
-    }, 0);
-    return () => clearTimeout(timer);
+    loadProjectDetails();
   }, [loadProjectDetails]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadTasks();
-    }, 0);
-    return () => clearTimeout(timer);
+    loadTasks();
   }, [loadTasks]);
 
   const handleCreateTask = async (e: React.FormEvent) => {
