@@ -3,7 +3,7 @@
  * Wraps fetching with auto-injected JWT token and transparent refresh token rotation logic
  */
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 export interface UserResponse {
   id: number;
@@ -298,6 +298,7 @@ export const api = {
       if (params.sort) q.append('sort', params.sort);
       return request(`/projects?${q.toString()}`);
     },
+    getById: (id: number): Promise<ProjectResponse> => request(`/projects/${id}`),
     create: (project: { name: string; description?: string }): Promise<ProjectResponse> => request('/projects', {
       method: 'POST',
       body: JSON.stringify(project)

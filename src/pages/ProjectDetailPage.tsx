@@ -4,6 +4,7 @@ import { api, ProjectResponse, TaskResponse, UserResponse } from '../services/ap
 import { Header } from '../components/Header';
 import { Modal } from '../components/Modal';
 import { TaskSlider } from '../components/TaskSlider';
+import { CustomSelect } from '../components/CustomSelect';
 import { 
   Plus, 
   Search, 
@@ -54,12 +55,7 @@ export const ProjectDetailPage: React.FC = () => {
   const loadProjectDetails = React.useCallback(async () => {
     if (!id) return;
     try {
-      const proj = await api.projects.list({ page: 0, size: 100 });
-      const currentProj = proj.content.find(p => p.id === Number(id));
-      if (!currentProj) {
-        navigate('/projects');
-        return;
-      }
+      const currentProj = await api.projects.getById(Number(id));
       setProject(currentProj);
       
       const usersList = await api.users.list();
@@ -149,6 +145,35 @@ export const ProjectDetailPage: React.FC = () => {
     setFilterType('');
   };
 
+  const handleDragStart = (e: React.DragEvent, taskId: number) => {
+    e.dataTransfer.setData('text/plain', taskId.toString());
+  };
+
+  const handleDrop = async (e: React.DragEvent, newStatus: string) => {
+    e.preventDefault();
+    const taskIdStr = e.dataTransfer.getData('text/plain');
+    if (!taskIdStr) return;
+    const taskId = Number(taskIdStr);
+
+    const draggedTask = tasks.find(t => t.id === taskId);
+    if (!draggedTask) return;
+    if (draggedTask.status === newStatus) return;
+
+    setTasks(prevTasks =>
+      prevTasks.map(t => t.id === taskId ? { ...t, status: newStatus as any } : t)
+    );
+
+    try {
+      await api.tasks.transition(taskId, newStatus, 'Moved via Kanban board drag-and-drop');
+    } catch (err: unknown) {
+      setTasks(prevTasks =>
+        prevTasks.map(t => t.id === taskId ? { ...t, status: draggedTask.status } : t)
+      );
+      const errorMsg = err instanceof Error ? err.message : 'Workflow transition rejected';
+      alert(`Could not move task: ${errorMsg}`);
+    }
+  };
+
   // Kanban status groups
   const KANBAN_STATUSES = [
     { title: 'To Do', value: 'TODO' },
@@ -223,40 +248,52 @@ export const ProjectDetailPage: React.FC = () => {
           </div>
 
           <div className="filter-item">
-            <select className="form-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-              <option value="">All Statuses</option>
-              <option value="TODO">TODO</option>
-              <option value="IN_PROGRESS">IN PROGRESS</option>
-              <option value="IN_REVIEW">IN REVIEW</option>
-              <option value="BLOCKED">BLOCKED</option>
-              <option value="DONE">DONE</option>
-              <option value="REOPENED">REOPENED</option>
-              <option value="CANCELLED">CANCELLED</option>
-            </select>
+            <CustomSelect 
+              value={filterStatus} 
+              onChange={setFilterStatus}
+              placeholder="All Statuses"
+              options={[
+                { label: 'TODO', value: 'TODO' },
+                { label: 'IN PROGRESS', value: 'IN_PROGRESS' },
+                { label: 'IN REVIEW', value: 'IN_REVIEW' },
+                { label: 'BLOCKED', value: 'BLOCKED' },
+                { label: 'DONE', value: 'DONE' },
+                { label: 'REOPENED', value: 'REOPENED' },
+                { label: 'CANCELLED', value: 'CANCELLED' }
+              ]}
+            />
           </div>
 
           <div className="filter-item">
-            <select className="form-select" value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}>
-              <option value="">All Priorities</option>
-              <option value="LOW">LOW</option>
-              <option value="MEDIUM">MEDIUM</option>
-              <option value="HIGH">HIGH</option>
-              <option value="URGENT">URGENT</option>
-            </select>
+            <CustomSelect 
+              value={filterPriority} 
+              onChange={setFilterPriority}
+              placeholder="All Priorities"
+              options={[
+                { label: 'LOW', value: 'LOW' },
+                { label: 'MEDIUM', value: 'MEDIUM' },
+                { label: 'HIGH', value: 'HIGH' },
+                { label: 'URGENT', value: 'URGENT' }
+              ]}
+            />
           </div>
 
           <div className="filter-item">
-            <select className="form-select" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-              <option value="">All Types</option>
-              <option value="BUG">BUG</option>
-              <option value="FEATURE">FEATURE</option>
-              <option value="REFACTOR">REFACTOR</option>
-              <option value="INCIDENT">INCIDENT</option>
-              <option value="RELIABILITY">RELIABILITY</option>
-              <option value="DOCUMENTATION">DOCUMENTATION</option>
-              <option value="TEST">TEST</option>
-              <option value="CHORE">CHORE</option>
-            </select>
+            <CustomSelect 
+              value={filterType} 
+              onChange={setFilterType}
+              placeholder="All Types"
+              options={[
+                { label: 'BUG', value: 'BUG' },
+                { label: 'FEATURE', value: 'FEATURE' },
+                { label: 'REFACTOR', value: 'REFACTOR' },
+                { label: 'INCIDENT', value: 'INCIDENT' },
+                { label: 'RELIABILITY', value: 'RELIABILITY' },
+                { label: 'DOCUMENTATION', value: 'DOCUMENTATION' },
+                { label: 'TEST', value: 'TEST' },
+                { label: 'CHORE', value: 'CHORE' }
+              ]}
+            />
           </div>
 
           <button className="btn btn-secondary" style={{ padding: '0.65rem 0.8rem' }} onClick={resetFilters}>
@@ -311,7 +348,12 @@ export const ProjectDetailPage: React.FC = () => {
                 {KANBAN_STATUSES.map(col => {
                   const colTasks = getStatusTasks(col.value);
                   return (
-                    <div key={col.value} className="kanban-column">
+                    <div 
+                      key={col.value} 
+                      className="kanban-column"
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => handleDrop(e, col.value)}
+                    >
                       <div className="kanban-header">
                         <div className="kanban-title">
                           <span style={{ 
@@ -335,6 +377,8 @@ export const ProjectDetailPage: React.FC = () => {
                             <div 
                               key={task.id} 
                               className="task-card"
+                              draggable={true}
+                              onDragStart={(e) => handleDragStart(e, task.id)}
                               onClick={() => setSelectedTaskId(task.id)}
                             >
                               <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
@@ -458,50 +502,62 @@ export const ProjectDetailPage: React.FC = () => {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', zIndex: 100, position: 'relative' }}>
             <div className="form-group">
               <label className="form-label">Task Type *</label>
-              <select className="form-select" value={taskType} onChange={(e) => setTaskType(e.target.value as 'BUG' | 'FEATURE' | 'REFACTOR' | 'INCIDENT' | 'RELIABILITY' | 'DOCUMENTATION' | 'TEST' | 'CHORE')}>
-                <option value="FEATURE">FEATURE</option>
-                <option value="BUG">BUG</option>
-                <option value="REFACTOR">REFACTOR</option>
-                <option value="INCIDENT">INCIDENT</option>
-                <option value="RELIABILITY">RELIABILITY</option>
-                <option value="DOCUMENTATION">DOCUMENTATION</option>
-                <option value="TEST">TEST</option>
-                <option value="CHORE">CHORE</option>
-              </select>
+              <CustomSelect 
+                value={taskType} 
+                onChange={(v) => setTaskType(v as any)}
+                options={[
+                  { label: 'FEATURE', value: 'FEATURE' },
+                  { label: 'BUG', value: 'BUG' },
+                  { label: 'REFACTOR', value: 'REFACTOR' },
+                  { label: 'INCIDENT', value: 'INCIDENT' },
+                  { label: 'RELIABILITY', value: 'RELIABILITY' },
+                  { label: 'DOCUMENTATION', value: 'DOCUMENTATION' },
+                  { label: 'TEST', value: 'TEST' },
+                  { label: 'CHORE', value: 'CHORE' }
+                ]}
+              />
             </div>
 
             <div className="form-group">
               <label className="form-label">Priority</label>
-              <select className="form-select" value={taskPriority} onChange={(e) => setTaskPriority(e.target.value as 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT')}>
-                <option value="LOW">LOW</option>
-                <option value="MEDIUM">MEDIUM</option>
-                <option value="HIGH">HIGH</option>
-                <option value="URGENT">URGENT</option>
-              </select>
+              <CustomSelect 
+                value={taskPriority} 
+                onChange={(v) => setTaskPriority(v as any)}
+                options={[
+                  { label: 'LOW', value: 'LOW' },
+                  { label: 'MEDIUM', value: 'MEDIUM' },
+                  { label: 'HIGH', value: 'HIGH' },
+                  { label: 'URGENT', value: 'URGENT' }
+                ]}
+              />
             </div>
 
             <div className="form-group">
               <label className="form-label">Severity (Optional)</label>
-              <select className="form-select" value={taskSeverity} onChange={(e) => setTaskSeverity(e.target.value)}>
-                <option value="">NONE</option>
-                <option value="LOW">LOW</option>
-                <option value="MEDIUM">MEDIUM</option>
-                <option value="HIGH">HIGH</option>
-                <option value="CRITICAL">CRITICAL</option>
-              </select>
+              <CustomSelect 
+                value={taskSeverity} 
+                onChange={setTaskSeverity}
+                placeholder="NONE"
+                options={[
+                  { label: 'LOW', value: 'LOW' },
+                  { label: 'MEDIUM', value: 'MEDIUM' },
+                  { label: 'HIGH', value: 'HIGH' },
+                  { label: 'CRITICAL', value: 'CRITICAL' }
+                ]}
+              />
             </div>
 
             <div className="form-group">
               <label className="form-label">Assignee</label>
-              <select className="form-select" value={taskAssigneeId} onChange={(e) => setTaskAssigneeId(e.target.value)}>
-                <option value="">Unassigned</option>
-                {users.map(u => (
-                  <option key={u.id} value={u.id}>{u.username} ({u.role})</option>
-                ))}
-              </select>
+              <CustomSelect 
+                value={taskAssigneeId} 
+                onChange={setTaskAssigneeId}
+                placeholder="Unassigned"
+                options={users.map(u => ({ label: `${u.username} (${u.role})`, value: String(u.id) }))}
+              />
             </div>
           </div>
 

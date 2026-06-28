@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { api, TaskResponse, UserResponse, ProjectResponse } from '../services/api';
 import { Header } from '../components/Header';
 import { TaskSlider } from '../components/TaskSlider';
+import { CustomSelect } from '../components/CustomSelect';
 import { 
   Search, 
   KanbanSquare, 
@@ -149,58 +150,70 @@ export const TasksPage: React.FC = () => {
           </div>
 
           <div className="filter-item">
-            <select className="form-select" value={filterProjectId} onChange={(e) => setFilterProjectId(e.target.value)}>
-              <option value="">All Projects</option>
-              {projects.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
+            <CustomSelect 
+              value={filterProjectId} 
+              onChange={setFilterProjectId}
+              placeholder="All Projects"
+              options={projects.map(p => ({ label: p.name, value: String(p.id) }))}
+            />
           </div>
 
           <div className="filter-item">
-            <select className="form-select" value={filterAssigneeId} onChange={(e) => setFilterAssigneeId(e.target.value)}>
-              <option value="">All Assignees</option>
-              {users.map(u => (
-                <option key={u.id} value={u.id}>{u.username}</option>
-              ))}
-            </select>
+            <CustomSelect 
+              value={filterAssigneeId} 
+              onChange={setFilterAssigneeId}
+              placeholder="All Assignees"
+              options={users.map(u => ({ label: u.username, value: String(u.id) }))}
+            />
           </div>
 
           <div className="filter-item">
-            <select className="form-select" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-              <option value="">All Statuses</option>
-              <option value="TODO">TODO</option>
-              <option value="IN_PROGRESS">IN PROGRESS</option>
-              <option value="IN_REVIEW">IN REVIEW</option>
-              <option value="BLOCKED">BLOCKED</option>
-              <option value="DONE">DONE</option>
-              <option value="REOPENED">REOPENED</option>
-              <option value="CANCELLED">CANCELLED</option>
-            </select>
+            <CustomSelect 
+              value={filterStatus} 
+              onChange={setFilterStatus}
+              placeholder="All Statuses"
+              options={[
+                { label: 'TODO', value: 'TODO' },
+                { label: 'IN PROGRESS', value: 'IN_PROGRESS' },
+                { label: 'IN REVIEW', value: 'IN_REVIEW' },
+                { label: 'BLOCKED', value: 'BLOCKED' },
+                { label: 'DONE', value: 'DONE' },
+                { label: 'REOPENED', value: 'REOPENED' },
+                { label: 'CANCELLED', value: 'CANCELLED' }
+              ]}
+            />
           </div>
 
           <div className="filter-item">
-            <select className="form-select" value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}>
-              <option value="">All Priorities</option>
-              <option value="LOW">LOW</option>
-              <option value="MEDIUM">MEDIUM</option>
-              <option value="HIGH">HIGH</option>
-              <option value="URGENT">URGENT</option>
-            </select>
+            <CustomSelect 
+              value={filterPriority} 
+              onChange={setFilterPriority}
+              placeholder="All Priorities"
+              options={[
+                { label: 'LOW', value: 'LOW' },
+                { label: 'MEDIUM', value: 'MEDIUM' },
+                { label: 'HIGH', value: 'HIGH' },
+                { label: 'URGENT', value: 'URGENT' }
+              ]}
+            />
           </div>
 
           <div className="filter-item">
-            <select className="form-select" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-              <option value="">All Types</option>
-              <option value="BUG">BUG</option>
-              <option value="FEATURE">FEATURE</option>
-              <option value="REFACTOR">REFACTOR</option>
-              <option value="INCIDENT">INCIDENT</option>
-              <option value="RELIABILITY">RELIABILITY</option>
-              <option value="DOCUMENTATION">DOCUMENTATION</option>
-              <option value="TEST">TEST</option>
-              <option value="CHORE">CHORE</option>
-            </select>
+            <CustomSelect 
+              value={filterType} 
+              onChange={setFilterType}
+              placeholder="All Types"
+              options={[
+                { label: 'BUG', value: 'BUG' },
+                { label: 'FEATURE', value: 'FEATURE' },
+                { label: 'REFACTOR', value: 'REFACTOR' },
+                { label: 'INCIDENT', value: 'INCIDENT' },
+                { label: 'RELIABILITY', value: 'RELIABILITY' },
+                { label: 'DOCUMENTATION', value: 'DOCUMENTATION' },
+                { label: 'TEST', value: 'TEST' },
+                { label: 'CHORE', value: 'CHORE' }
+              ]}
+            />
           </div>
 
           <button className="btn btn-secondary" style={{ padding: '0.65rem 0.8rem' }} onClick={resetFilters}>
