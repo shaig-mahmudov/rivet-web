@@ -13,10 +13,11 @@ export const BlockedTasksPage: React.FC = () => {
   const loadBlockedTasks = React.useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.tasks.getBlocked();
+      const [data, projs] = await Promise.all([
+        api.tasks.getBlocked(),
+        api.projects.list({ size: 100 })
+      ]);
       setTasks(data);
-      
-      const projs = await api.projects.list({ size: 100 });
       setProjects(projs.content);
     } catch (e) {
       console.error(e);

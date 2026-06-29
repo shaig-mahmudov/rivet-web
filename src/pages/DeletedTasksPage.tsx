@@ -13,10 +13,11 @@ export const DeletedTasksPage: React.FC = () => {
   const loadDeletedTasks = React.useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.tasks.getDeleted();
+      const [data, projs] = await Promise.all([
+        api.tasks.getDeleted(),
+        api.projects.list({ size: 100 })
+      ]);
       setTasks(data.content);
-      
-      const projs = await api.projects.list({ size: 100 });
       setProjects(projs.content);
     } catch (e) {
       console.error(e);

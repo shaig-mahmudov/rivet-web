@@ -15,7 +15,8 @@ export const TasksPage: React.FC = () => {
   const [tasks, setTasks] = useState<TaskResponse[]>([]);
   const [users, setUsers] = useState<UserResponse[]>([]);
   const [projects, setProjects] = useState<ProjectResponse[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingMetadata, setLoadingMetadata] = useState(true);
+  const [loadingTasks, setLoadingTasks] = useState(true);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
 
   // Filters State
@@ -30,19 +31,23 @@ export const TasksPage: React.FC = () => {
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 
   const loadData = React.useCallback(async () => {
-    setLoading(true);
+    setLoadingMetadata(true);
     try {
-      const usersList = await api.users.list();
+      const [usersList, projectsList] = await Promise.all([
+        api.users.list(),
+        api.projects.list({ size: 100 })
+      ]);
       setUsers(usersList);
-
-      const projectsList = await api.projects.list({ size: 100 });
       setProjects(projectsList.content);
     } catch (e) {
       console.error(e);
+    } finally {
+      setLoadingMetadata(false);
     }
   }, []);
 
   const loadTasks = React.useCallback(async () => {
+    setLoadingTasks(true);
     try {
       const params: Record<string, unknown> = {
         search: search || undefined,
@@ -58,7 +63,7 @@ export const TasksPage: React.FC = () => {
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      setLoadingTasks(false);
     }
   }, [search, filterStatus, filterPriority, filterType, filterProjectId, filterAssigneeId]);
 
@@ -69,6 +74,8 @@ export const TasksPage: React.FC = () => {
   useEffect(() => {
     loadTasks();
   }, [loadTasks]);
+
+  const loading = loadingMetadata || loadingTasks;
 
   const handleDragStart = (e: React.DragEvent, taskId: number) => {
     e.dataTransfer.setData('text/plain', taskId.toString());
