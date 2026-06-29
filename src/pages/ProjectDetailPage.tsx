@@ -55,10 +55,11 @@ export const ProjectDetailPage: React.FC = () => {
   const loadProjectDetails = React.useCallback(async () => {
     if (!id) return;
     try {
-      const currentProj = await api.projects.getById(Number(id));
+      const [currentProj, usersList] = await Promise.all([
+        api.projects.getById(Number(id)),
+        api.users.list()
+      ]);
       setProject(currentProj);
-      
-      const usersList = await api.users.list();
       setUsers(usersList);
     } catch (e) {
       console.error(e);

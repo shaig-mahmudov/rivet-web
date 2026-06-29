@@ -21,14 +21,14 @@ export const DashboardPage: React.FC = () => {
   useEffect(() => {
     async function loadDashboardData() {
       try {
-        const projData = await api.projects.list({ size: 1 });
+        const [projData, taskData, blockedData] = await Promise.all([
+          api.projects.list({ size: 1 }),
+          api.tasks.list({ size: 100 }),
+          api.tasks.getBlocked()
+        ]);
+
         setProjectsCount(projData.totalElements);
-
-        const taskData = await api.tasks.list({ size: 100 });
         setTasks(taskData.content);
-
-        // Fetch blocked tasks
-        const blockedData = await api.tasks.getBlocked();
         setBlockedTasks(blockedData);
 
         // Due soon tasks (filtering frontend-side from fetched tasks or custom query)
