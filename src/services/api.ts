@@ -131,14 +131,14 @@ const storage = {
 };
 
 let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
+let refreshSubscribers: ((token: string | null, error?: Error) => void)[] = [];
 
-function subscribeTokenRefresh(cb: (token: string) => void) {
+function subscribeTokenRefresh(cb: (token: string | null, error?: Error) => void) {
   refreshSubscribers.push(cb);
 }
 
-function onRefreshed(token: string) {
-  refreshSubscribers.forEach(cb => cb(token));
+function onRefreshed(token: string | null, error?: Error) {
+  refreshSubscribers.forEach(cb => cb(token, error));
   refreshSubscribers = [];
 }
 
@@ -204,19 +204,23 @@ async function request<T = unknown>(url: string, options: RequestInit = {}): Pro
             storage.clearSession();
             isRefreshing = false;
             window.location.href = '/login';
-            throw new Error('Session expired. Please log in again.');
+            const err = new Error('Session expired. Please log in again.');
+            onRefreshed(null, err);
+            throw err;
           }
         } catch (err) {
           storage.clearSession();
           isRefreshing = false;
           window.location.href = '/login';
+          onRefreshed(null, err instanceof Error ? err : new Error(String(err)));
           throw err;
         }
       }
       
       // Queue requests until refresh finishes
       return new Promise<T>((resolve, reject) => {
-        subscribeTokenRefresh((newToken) => {
+        subscribeTokenRefresh((newToken, error) => {
+          if (error) return reject(error);
           headers.set('Authorization', `Bearer ${newToken}`);
           fetch(`${API_BASE}${url}`, { ...options, headers })
             .then(res => parseResponse<T>(res))
