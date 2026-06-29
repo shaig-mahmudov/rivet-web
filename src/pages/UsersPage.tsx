@@ -24,9 +24,11 @@ export const UsersPage: React.FC = () => {
   const loadUsers = React.useCallback(async () => {
     setLoading(true);
     try {
-      const active = await api.users.list();
+      const [active, deleted] = await Promise.all([
+        api.users.list(),
+        api.users.getDeleted()
+      ]);
       setUsers(active);
-      const deleted = await api.users.getDeleted();
       setDeletedUsers(deleted);
     } catch (e) {
       console.error(e);
