@@ -14,34 +14,29 @@ import { Link } from 'react-router-dom';
 export const DashboardPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [projectsCount, setProjectsCount] = useState(0);
-  const [tasks, setTasks] = useState<TaskResponse[]>([]);
+  const [inProgressCount, setInProgressCount] = useState(0);
+  const [doneCount, setDoneCount] = useState(0);
   const [blockedTasks, setBlockedTasks] = useState<TaskResponse[]>([]);
-  const [dueSoonTasks, setDueSoonTasks] = useState<TaskResponse[]>([]);
+  const [urgentTasks, setUrgentTasks] = useState<TaskResponse[]>([]);
 
   useEffect(() => {
     async function loadDashboardData() {
       try {
-        const [projData, taskData, blockedData] = await Promise.all([
+        const [projData, blockedData, inProgressData, doneData, urgentData] = await Promise.all([
           api.projects.list({ size: 1 }),
-          api.tasks.list({ size: 100 }),
-          api.tasks.getBlocked()
+          api.tasks.getBlocked(),
+          api.tasks.list({ status: 'IN_PROGRESS', size: 1 }),
+          api.tasks.list({ status: 'DONE', size: 1 }),
+          api.tasks.list({ priority: 'URGENT', size: 10 })
         ]);
 
         setProjectsCount(projData.totalElements);
-        setTasks(taskData.content);
+        setInProgressCount(inProgressData.totalElements);
+        setDoneCount(doneData.totalElements);
         setBlockedTasks(blockedData);
 
-        // Due soon tasks (filtering frontend-side from fetched tasks or custom query)
-        const today = new Date();
-        const nextWeek = new Date();
-        nextWeek.setDate(today.getDate() + 7);
-        
-        const dueSoon = taskData.content.filter(t => {
-          if (!t.dueDate || t.status === 'DONE' || t.status === 'CANCELLED') return false;
-          const due = new Date(t.dueDate);
-          return due >= today && due <= nextWeek;
-        });
-        setDueSoonTasks(dueSoon);
+        const urgentActive = urgentData.content.filter(t => t.status !== 'DONE' && t.status !== 'CANCELLED');
+        setUrgentTasks(urgentActive);
 
       } catch (e) {
         console.error('Error loading dashboard data', e);
@@ -52,10 +47,6 @@ export const DashboardPage: React.FC = () => {
 
     loadDashboardData();
   }, []);
-
-  const getStatusCount = (status: string) => {
-    return tasks.filter(t => t.status === status).length;
-  };
 
   if (loading) {
     return (
@@ -100,7 +91,7 @@ export const DashboardPage: React.FC = () => {
             </div>
             <div className="stat-content">
               <span className="stat-title">In Progress Tasks</span>
-              <span className="stat-value">{getStatusCount('IN_PROGRESS')}</span>
+              <span className="stat-value">{inProgressCount}</span>
             </div>
           </div>
 
@@ -120,7 +111,7 @@ export const DashboardPage: React.FC = () => {
             </div>
             <div className="stat-content">
               <span className="stat-title">Completed (Done)</span>
-              <span className="stat-value">{getStatusCount('DONE')}</span>
+              <span className="stat-value">{doneCount}</span>
             </div>
           </div>
         </div>
@@ -175,22 +166,22 @@ export const DashboardPage: React.FC = () => {
             )}
           </div>
 
-          {/* Column B: Due Soon / Action Required */}
+          {/* Column B: Urgent Tasks */}
           <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 'var(--border-radius)', padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
               <h3 style={{ fontSize: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-accent)' }}>
                 <Clock size={18} />
-                <span>Urgent / Due This Week ({dueSoonTasks.length})</span>
+                <span>Urgent Tasks ({urgentTasks.length})</span>
               </h3>
             </div>
 
-            {dueSoonTasks.length === 0 ? (
+            {urgentTasks.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                No tasks are due within the next 7 days.
+                No urgent tasks are currently active.
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {dueSoonTasks.slice(0, 5).map(task => (
+                {urgentTasks.slice(0, 5).map(task => (
                   <div 
                     key={task.id} 
                     style={{ 
@@ -208,7 +199,7 @@ export const DashboardPage: React.FC = () => {
                         {task.title}
                       </h4>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                        Due Date: <strong style={{ color: 'var(--color-danger)' }}>{task.dueDate}</strong>
+                        Due Date: <strong style={{ color: 'var(--color-danger)' }}>{task.dueDate || 'No Date'}</strong>
                       </span>
                     </div>
                     <span className={`badge badge-${(task.priority || 'medium').toLowerCase()}`}>
