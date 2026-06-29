@@ -152,9 +152,21 @@ export const TaskSlider: React.FC<TaskSliderProps> = ({ taskId, isOpen, onClose,
       setEditAssigneeId(taskDetails.assigneeId ? String(taskDetails.assigneeId) : '');
       setEditDueDate(taskDetails.dueDate || '');
 
-      // Load users for assignee dropdown
+      // Load users for assignee dropdown with heuristic team filtering
       const usersList = await api.users.list();
-      setUsers(usersList);
+      let teamUsers = usersList;
+      if (taskDetails.projectId) {
+        try {
+          const projectTasks = await api.projects.listTasks(taskDetails.projectId, { size: 500 });
+          const assignedUserIds = new Set(projectTasks.content.map(t => t.assigneeId).filter(id => id != null));
+          if (user?.id) assignedUserIds.add(user.id);
+          if (taskDetails.assigneeId) assignedUserIds.add(taskDetails.assigneeId);
+          teamUsers = usersList.filter(u => assignedUserIds.has(u.id));
+        } catch (e) {
+          console.warn("Failed to fetch project tasks for heuristic user filtering", e);
+        }
+      }
+      setUsers(teamUsers);
 
       // Load nested data based on active tab or preload
       await loadTabSpecificData(activeTab, taskDetails);

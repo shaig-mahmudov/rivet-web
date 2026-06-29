@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { api, ProjectResponse, TaskResponse, UserResponse } from '../services/api';
 import { Header } from '../components/Header';
 import { Modal } from '../components/Modal';
@@ -18,6 +19,7 @@ import {
 export const ProjectDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const [project, setProject] = useState<ProjectResponse | null>(null);
   const [users, setUsers] = useState<UserResponse[]>([]);
@@ -55,12 +57,19 @@ export const ProjectDetailPage: React.FC = () => {
   const loadProjectDetails = React.useCallback(async () => {
     if (!id) return;
     try {
-      const [currentProj, usersList] = await Promise.all([
+      const [currentProj, usersList, projectTasks] = await Promise.all([
         api.projects.getById(Number(id)),
-        api.users.list()
+        api.users.list(),
+        api.projects.listTasks(Number(id), { size: 500 })
       ]);
+      
+      const assignedUserIds = new Set(projectTasks.content.map(t => t.assigneeId).filter(id => id != null));
+      if (user?.id) assignedUserIds.add(user.id);
+      
+      const teamUsers = usersList.filter(u => assignedUserIds.has(u.id));
+
       setProject(currentProj);
-      setUsers(usersList);
+      setUsers(teamUsers);
     } catch (e) {
       console.error(e);
       navigate('/projects');
